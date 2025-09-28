@@ -12,29 +12,40 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 export type Database = {
   public: {
     Tables: {
-      usdt_price_tiers: {
+      buying_prices: {
         Row: {
-          id: string
-          type: 'buy' | 'sell'
-          min_quantity_usdt: number
-          max_quantity_usdt: number | null
-          rate_inr: number
+          id: number
+          min_quantity: number
+          max_quantity: number | null
+          price_in_inr: number
           created_at: string
         }
         Insert: {
-          id?: string
-          type: 'buy' | 'sell'
-          min_quantity_usdt: number
-          max_quantity_usdt?: number | null
-          rate_inr: number
+          id?: number
+          min_quantity: number
+          max_quantity?: number | null
+          price_in_inr: number
           created_at?: string
         }
         Update: {
-          id?: string
-          type?: 'buy' | 'sell'
-          min_quantity_usdt?: number
-          max_quantity_usdt?: number | null
-          rate_inr?: number
+          id?: number
+          min_quantity?: number
+          max_quantity?: number | null
+          price_in_inr?: number
+          created_at?: string
+        }
+      }
+      admins: {
+        Row: {
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
           created_at?: string
         }
       }

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Calculator, ArrowRight, Loader } from 'lucide-react'
-import { useUsdtPriceTiers } from '@/hooks/useUsdtPriceTiers'
+import { useBuyingPrices } from '@/hooks/useBuyingPrices'
 
 interface PriceCalculatorProps {
   onBuyClick: (amount: number) => void
@@ -9,7 +9,7 @@ interface PriceCalculatorProps {
 
 const PriceCalculator: React.FC<PriceCalculatorProps> = ({ onBuyClick }) => {
   const [amount, setAmount] = useState('')
-  const { buyTiers, loading: ratesLoading } = useUsdtPriceTiers()
+  const { buyTiers, loading: ratesLoading } = useBuyingPrices()
 
   const inrAmount = parseFloat(amount) || 0
 
@@ -19,23 +19,23 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({ onBuyClick }) => {
     }
 
     // Find the best rate to make a provisional calculation. For buying, best rate is lowest rate.
-    const bestRateTier = buyTiers.reduce((prev, curr) => (prev.rate_inr < curr.rate_inr ? prev : curr))
-    const provisionalUsdt = inrAmount / bestRateTier.rate_inr
+    const bestRateTier = buyTiers.reduce((prev, curr) => (prev.price_in_inr < curr.price_in_inr ? prev : curr))
+    const provisionalUsdt = inrAmount / bestRateTier.price_in_inr
 
     // Find the correct tier based on the provisional USDT amount
     const correctTier = buyTiers.find(tier => 
-      provisionalUsdt >= tier.min_quantity_usdt &&
-      (tier.max_quantity_usdt === null || provisionalUsdt < tier.max_quantity_usdt)
+      provisionalUsdt >= tier.min_quantity &&
+      (tier.max_quantity === null || provisionalUsdt < tier.max_quantity)
     ) || bestRateTier;
 
-    const actualRate = correctTier.rate_inr
+    const actualRate = correctTier.price_in_inr
     const usdtAmount = Number((inrAmount / actualRate).toFixed(6))
 
     return { usdtAmount, actualRate }
   }, [inrAmount, buyTiers, ratesLoading])
 
   const handleCalculate = () => {
-    if (inrAmount && inrAmount >= 500 && actualRate) {
+    if (inrAmount > 0 && actualRate) {
       onBuyClick(inrAmount)
     }
   }
@@ -64,7 +64,7 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({ onBuyClick }) => {
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="Minimum ₹500"
+            placeholder="Enter amount in INR"
             className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500"
           />
         </div>
@@ -105,7 +105,7 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({ onBuyClick }) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleCalculate}
-          disabled={!amount || parseFloat(amount) < 500 || ratesLoading || !actualRate}
+          disabled={!amount || parseFloat(amount) <= 0 || ratesLoading || !actualRate}
           className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-all"
         >
           {ratesLoading ? 'Loading Rates...' : 'Calculate & Pay'}

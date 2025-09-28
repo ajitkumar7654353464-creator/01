@@ -5,12 +5,12 @@ import { ArrowLeft, Upload, Wallet, Building, CreditCard, Loader } from 'lucide-
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { useUsdtPriceTiers } from '@/hooks/useUsdtPriceTiers'
+import { useBuyingPrices } from '@/hooks/useBuyingPrices'
 
 const SellPage: React.FC = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { sellRate, loading: ratesLoading } = useUsdtPriceTiers()
+  const { sellRate, loading: ratesLoading } = useBuyingPrices()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     usdtAmount: '',

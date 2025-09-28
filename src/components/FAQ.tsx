@@ -20,7 +20,7 @@ const FAQ: React.FC = () => {
     },
     {
       question: 'What is the minimum amount?',
-      answer: 'You can start buying from as low as ₹500. There\'s no maximum limit for transactions.'
+      answer: 'You can start buying from as low as ₹1000. There\'s no maximum limit for transactions.'
     },
     {
       question: 'Which networks do you support?',

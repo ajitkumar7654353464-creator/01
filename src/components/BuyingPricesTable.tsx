@@ -1,65 +1,69 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { usePriceTiers } from '../hooks/usePriceTiers'
-import { Loader } from 'lucide-react'
+import { useBuyingPrices } from '@/hooks/useBuyingPrices'
+import { Loader, AlertTriangle } from 'lucide-react'
 
 const BuyingPricesTable: React.FC = () => {
-  const { buyTiers, loading } = usePriceTiers()
+  const { buyTiers, loading, error } = useBuyingPrices()
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="bg-gray-900 rounded-2xl p-6 border border-gray-800"
+      className="w-full max-w-md mx-auto"
     >
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-white mb-4">Our Buying Prices</h2>
-        <p className="text-gray-400">Competitive rates for all transaction volumes</p>
+      <div className="text-center mb-6">
+        <h2 className="text-3xl font-bold text-white">Our Buying Prices</h2>
+        <p className="text-gray-400 mt-2">Competitive rates for all transaction volumes</p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-700">
+      <div className="overflow-hidden rounded-2xl border border-dt-brown-light bg-dt-brown-dark shadow-lg">
         <div className="grid grid-cols-2">
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-4 text-center">
-            <h3 className="font-bold text-white text-lg">AMOUNT (IN INR)</h3>
+          <div className="bg-dt-brown-medium p-4 text-center">
+            <h3 className="font-bold text-dt-gold tracking-wider text-sm uppercase">Quantity (in USDT)</h3>
           </div>
-          <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-4 text-center">
-            <h3 className="font-bold text-white text-lg">PRICE (PER USDT)</h3>
+          <div className="bg-dt-brown-medium p-4 text-center">
+            <h3 className="font-bold text-dt-gold tracking-wider text-sm uppercase">Our Price (in INR)</h3>
           </div>
 
           {/* Rows */}
           {loading ? (
-            <div className="col-span-2 bg-gray-800 p-8 flex justify-center items-center">
+            <div className="col-span-2 p-8 flex justify-center items-center">
               <Loader className="w-6 h-6 animate-spin text-orange-500" />
+            </div>
+          ) : error ? (
+             <div className="col-span-2 p-8 text-center bg-red-900/20">
+              <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+              <p className="text-red-400 font-semibold">Error Loading Prices</p>
+              <p className="text-xs text-red-300 mt-1">{error}</p>
             </div>
           ) : buyTiers.length > 0 ? (
             buyTiers.map((tier, index) => (
               <React.Fragment key={tier.id}>
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-gray-800 p-4 text-center border-b border-gray-700 last:border-b-0"
+                  className="p-4 text-center border-t border-dt-brown-light"
                 >
                   <span className="text-white font-semibold text-lg">
-                    ₹{tier.min_amount_inr.toLocaleString()} - {tier.max_amount_inr ? `₹${tier.max_amount_inr.toLocaleString()}` : 'Above'}
+                    {tier.min_quantity} - {tier.max_quantity ? `${tier.max_quantity}` : '+'}
                   </span>
                 </motion.div>
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-gray-800 p-4 text-center border-b border-gray-700 last:border-b-0"
+                  className="p-4 text-center border-t border-dt-brown-light"
                 >
-                  <span className="text-green-400 font-semibold text-lg">₹{tier.rate.toFixed(2)}</span>
+                  <span className="text-white font-semibold text-lg">₹{tier.price_in_inr.toFixed(2)}</span>
                 </motion.div>
               </React.Fragment>
             ))
           ) : (
-            <div className="col-span-2 bg-gray-800 p-8 text-center">
+            <div className="col-span-2 p-8 text-center">
               <p className="text-gray-400">Buying prices are not available at the moment.</p>
             </div>
           )}
@@ -68,7 +72,7 @@ const BuyingPricesTable: React.FC = () => {
 
       <div className="mt-6 p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
         <p className="text-sm text-blue-400 text-center">
-          Prices are updated in real-time based on market conditions
+          Prices are updated in real-time. Admins can edit them from the Supabase dashboard.
         </p>
       </div>
     </motion.div>

@@ -2,7 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Loader, ArrowRight } from 'lucide-react'
 import { useCryptoPrices } from '@/hooks/useCryptoPrices'
-import { useUsdtPriceTiers } from '@/hooks/useUsdtPriceTiers'
+import { useBuyingPrices } from '@/hooks/useBuyingPrices'
 
 interface LiveCryptoPricesProps {
   onBuyUsdtClick: () => void
@@ -10,10 +10,10 @@ interface LiveCryptoPricesProps {
 
 const LiveCryptoPrices: React.FC<LiveCryptoPricesProps> = ({ onBuyUsdtClick }) => {
   const { prices, loading: coingeckoLoading, error: coingeckoError } = useCryptoPrices()
-  const { buyTiers, loading: ratesLoading } = useUsdtPriceTiers()
+  const { buyTiers, loading: ratesLoading } = useBuyingPrices()
 
   const loading = coingeckoLoading || ratesLoading
-  const usdtStartRate = buyTiers.find(t => t.min_quantity_usdt === 0)?.rate_inr
+  const usdtStartRate = buyTiers.find(t => t.min_quantity === 0)?.price_in_inr
 
   if (loading) {
     return (

@@ -1,11 +1,11 @@
 import React, { useRef } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Shield, Zap, DollarSign, Smartphone, MessageCircle } from 'lucide-react'
+import { ArrowRight, Shield, Zap, DollarSign, Smartphone, MessageCircle, Send } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import PriceCalculator from '@/components/PriceCalculator'
 import LiveCryptoPrices from '@/components/LiveCryptoPrices'
-import TieredBuyingPricesTable from '@/components/TieredBuyingPricesTable'
+import BuyingPricesTable from '@/components/BuyingPricesTable'
 import FAQ from '@/components/FAQ'
 
 interface HomePageProps {
@@ -108,7 +108,7 @@ const HomePage: React.FC<HomePageProps> = ({ onAuthRequired }) => {
       {/* Tiered Buying Prices Table */}
       <section className="py-16 bg-black">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <TieredBuyingPricesTable />
+          <BuyingPricesTable />
         </div>
       </section>
 
@@ -188,7 +188,7 @@ const HomePage: React.FC<HomePageProps> = ({ onAuthRequired }) => {
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 transition-colors flex items-center space-x-2"
               >
-                <MessageCircle className="w-5 h-5" />
+                <Send className="w-5 h-5" />
                 <span>Join Telegram</span>
               </a>
             </div>

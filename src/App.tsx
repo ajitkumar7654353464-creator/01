@@ -9,7 +9,7 @@ import SellPage from './pages/SellPage'
 import TransactionHistory from './pages/TransactionHistory'
 import SupportPage from './pages/SupportPage'
 import AuthModal from './components/AuthModal'
-import WhatsAppButton from './components/WhatsAppButton'
+import TelegramButton from '@/components/TelegramButton'
 
 function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
@@ -35,7 +35,7 @@ function App() {
             onClose={() => setIsAuthModalOpen(false)} 
           />
 
-          <WhatsAppButton />
+          <TelegramButton />
           
           <Toaster 
             position="top-right"

@@ -1,10 +1,10 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { useUsdtPriceTiers } from '@/hooks/useUsdtPriceTiers'
+import { useBuyingPrices } from '@/hooks/useBuyingPrices'
 import { Loader } from 'lucide-react'
 
-const TieredBuyingPricesTable: React.FC = () => {
-  const { buyTiers, loading } = useUsdtPriceTiers()
+const BuyingPricesTable: React.FC = () => {
+  const { buyTiers, loading } = useBuyingPrices()
 
   return (
     <motion.div
@@ -43,7 +43,7 @@ const TieredBuyingPricesTable: React.FC = () => {
                   className="p-4 text-center border-t border-dt-brown-light"
                 >
                   <span className="text-white font-semibold text-lg">
-                    {tier.min_quantity_usdt} - {tier.max_quantity_usdt ? `${tier.max_quantity_usdt}` : '+'}
+                    {tier.min_quantity} - {tier.max_quantity ? `${tier.max_quantity}` : '+'}
                   </span>
                 </motion.div>
                 <motion.div
@@ -52,7 +52,7 @@ const TieredBuyingPricesTable: React.FC = () => {
                   transition={{ delay: index * 0.1 }}
                   className="p-4 text-center border-t border-dt-brown-light"
                 >
-                  <span className="text-white font-semibold text-lg">₹{tier.rate_inr.toFixed(2)}</span>
+                  <span className="text-white font-semibold text-lg">₹{tier.price_in_inr.toFixed(2)}</span>
                 </motion.div>
               </React.Fragment>
             ))
@@ -66,11 +66,11 @@ const TieredBuyingPricesTable: React.FC = () => {
 
       <div className="mt-6 p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
         <p className="text-sm text-blue-400 text-center">
-          Prices are updated in real-time. You can edit them from your Supabase dashboard.
+          Prices are updated in real-time. Admins can edit them from the Supabase dashboard.
         </p>
       </div>
     </motion.div>
   )
 }
 
-export default TieredBuyingPricesTable
+export default BuyingPricesTable
