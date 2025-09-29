@@ -1,28 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, Database } from '@/lib/supabase'
+import { supabase, Database } from '../lib/supabase'
 
-export type BuyingPrice = Database['public']['Tables']['buying_prices']['Row']
-
-interface BuyingPrices {
-  buyTiers: BuyingPrice[]
-  sellRate: number
-}
+export type BuyingPriceTier = Database['public']['Tables']['buying_prices']['Row']
 
 export const useBuyingPrices = () => {
-  const [prices, setPrices] = useState<BuyingPrices>({ buyTiers: [], sellRate: 90 })
+  const [tiers, setTiers] = useState<BuyingPriceTier[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchPrices = useCallback(async () => {
+  const fetchTiers = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('buying_prices')
         .select('*')
-        .order('min_quantity', { ascending: true })
+        .order('sort_order', { ascending: true })
 
       if (error) throw error
 
-      setPrices({ buyTiers: data, sellRate: 90 }) // Sell rate is fixed
+      setTiers(data || [])
       setError(null)
     } catch (err: any) {
       setError('Failed to fetch buying prices')
@@ -33,7 +28,7 @@ export const useBuyingPrices = () => {
   }, [])
 
   useEffect(() => {
-    fetchPrices()
+    fetchTiers()
 
     const channel = supabase
       .channel('buying_prices_changes')
@@ -41,8 +36,8 @@ export const useBuyingPrices = () => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'buying_prices' },
         (payload) => {
-          console.log('Buying price change received!', payload)
-          fetchPrices()
+          console.log('Buying prices change received!', payload)
+          fetchTiers()
         }
       )
       .subscribe()
@@ -50,7 +45,7 @@ export const useBuyingPrices = () => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchPrices])
+  }, [fetchTiers])
 
-  return { ...prices, loading, error }
+  return { tiers, loading, error }
 }

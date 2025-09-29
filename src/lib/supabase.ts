@@ -14,24 +14,41 @@ export type Database = {
     Tables: {
       buying_prices: {
         Row: {
-          id: number
-          min_quantity: number
-          max_quantity: number | null
-          price_in_inr: number
+          id: string
+          quantity_range: string
+          price_inr: number
+          sort_order: number
           created_at: string
         }
         Insert: {
-          id?: number
-          min_quantity: number
-          max_quantity?: number | null
-          price_in_inr: number
+          id?: string
+          quantity_range: string
+          price_inr: number
+          sort_order: number
           created_at?: string
         }
         Update: {
-          id?: number
-          min_quantity?: number
-          max_quantity?: number | null
-          price_in_inr?: number
+          id?: string
+          quantity_range?: string
+          price_inr?: number
+          sort_order?: number
+          created_at?: string
+        }
+      }
+      app_config: {
+        Row: {
+          key: string
+          value: number
+          created_at: string
+        }
+        Insert: {
+          key: string
+          value: number
+          created_at?: string
+        }
+        Update: {
+          key?: string
+          value?: number
           created_at?: string
         }
       }

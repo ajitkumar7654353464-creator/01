@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Upload, Clock, CheckCircle, Loader } from 'lucide-react'
@@ -8,17 +8,15 @@ import toast from 'react-hot-toast'
 import UserInfoForm from '@/components/UserInfoForm'
 import PaymentStep from '@/components/PaymentStep'
 import ConfirmationStep from '@/components/ConfirmationStep'
-import { useBuyingPrices } from '@/hooks/useBuyingPrices'
 
 const BuyPage: React.FC = () => {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { buyTiers, loading: ratesLoading } = useBuyingPrices()
   
   const [currentStep, setCurrentStep] = useState(1)
   const [transactionData, setTransactionData] = useState({
-    amount: location.state?.amount || 0,
+    amount: 0,
     usdtAmount: 0,
     exchangeRate: 0,
     networkType: 'TRC20' as 'TRC20' | 'ERC20',
@@ -33,46 +31,28 @@ const BuyPage: React.FC = () => {
   })
   const [loading, setLoading] = useState(true)
 
-  const calculatedValues = useMemo(() => {
-    const inrAmount = location.state?.amount || 0
-    if (inrAmount <= 0 || ratesLoading || buyTiers.length === 0) {
-      return { usdtAmount: 0, actualRate: 0 }
-    }
-    const bestRateTier = buyTiers.reduce((prev, curr) => (prev.price_in_inr < curr.price_in_inr ? prev : curr))
-    const provisionalUsdt = inrAmount / bestRateTier.price_in_inr
-    const correctTier = buyTiers.find(tier => 
-      provisionalUsdt >= tier.min_quantity &&
-      (tier.max_quantity === null || provisionalUsdt < tier.max_quantity)
-    ) || bestRateTier;
-
-    const actualRate = correctTier.price_in_inr
-    const usdtAmount = Number((inrAmount / actualRate).toFixed(6))
-    return { usdtAmount, actualRate }
-  }, [location.state?.amount, buyTiers, ratesLoading])
-
   useEffect(() => {
     if (!user) {
       navigate('/')
       return
     }
-    if (ratesLoading) return
 
-    const amount = location.state?.amount || 0
-    if (amount > 0) {
+    const { amount, usdtAmount, exchangeRate } = location.state || {}
+
+    if (amount > 0 && usdtAmount > 0 && exchangeRate > 0) {
       setTransactionData(prev => ({ 
         ...prev, 
         amount, 
-        exchangeRate: calculatedValues.actualRate, 
-        usdtAmount: calculatedValues.usdtAmount 
+        usdtAmount,
+        exchangeRate
       }))
       setLoading(false)
-    } else if (location.state?.amount === undefined) {
-      // If user navigates directly, redirect to home
-      navigate('/')
     } else {
-      setLoading(false)
+      // If user navigates directly or state is incomplete, redirect to home
+      toast.error("Please start your transaction from the home page.", { id: 'buy-page-redirect' })
+      navigate('/')
     }
-  }, [user, navigate, location.state, ratesLoading, calculatedValues])
+  }, [user, navigate, location.state])
 
   const handleUserInfoSubmit = (userInfo: any) => {
     setTransactionData(prev => ({ ...prev, userInfo }))
@@ -108,7 +88,7 @@ const BuyPage: React.FC = () => {
     }
   }
 
-  if (loading || ratesLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 py-8 flex items-center justify-center">
         <Loader className="w-8 h-8 text-orange-500 animate-spin" />
@@ -169,7 +149,7 @@ const BuyPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-400">Exchange Rate</p>
-                <p className="text-lg font-semibold text-white">₹{transactionData.exchangeRate.toFixed(2)}</p>
+                <p className="text-lg font-semibold text-white">₹{transactionData.exchangeRate > 0 ? transactionData.exchangeRate.toFixed(2) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-400">Network</p>

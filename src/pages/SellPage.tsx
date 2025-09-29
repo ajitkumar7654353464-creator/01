@@ -5,12 +5,12 @@ import { ArrowLeft, Upload, Wallet, Building, CreditCard, Loader } from 'lucide-
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { useBuyingPrices } from '@/hooks/useBuyingPrices'
+import { useExchangeRates } from '@/hooks/useExchangeRates'
 
 const SellPage: React.FC = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { sellRate, loading: ratesLoading } = useBuyingPrices()
+  const { sellRate, loading: ratesLoading } = useExchangeRates()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     usdtAmount: '',
@@ -108,7 +108,7 @@ const SellPage: React.FC = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-4">Sell USDT</h1>
             <p className="text-gray-400">
-              Convert your USDT to INR at a fixed rate of ₹{sellRate.toFixed(2)}.
+              {sellRate ? `Convert your USDT to INR at a fixed rate of ₹${sellRate.toFixed(2)}.` : 'Sell rate is currently unavailable.'}
             </p>
           </div>
 

@@ -10,10 +10,10 @@ interface LiveCryptoPricesProps {
 
 const LiveCryptoPrices: React.FC<LiveCryptoPricesProps> = ({ onBuyUsdtClick }) => {
   const { prices, loading: coingeckoLoading, error: coingeckoError } = useCryptoPrices()
-  const { buyTiers, loading: ratesLoading } = useBuyingPrices()
+  const { tiers, loading: ratesLoading } = useBuyingPrices()
 
   const loading = coingeckoLoading || ratesLoading
-  const usdtStartRate = buyTiers.find(t => t.min_quantity === 0)?.price_in_inr
+  const usdtStartRate = tiers.length > 0 ? tiers[0].price_inr : null
 
   if (loading) {
     return (

@@ -1,42 +1,62 @@
 import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Calculator, ArrowRight, Loader } from 'lucide-react'
-import { useBuyingPrices } from '@/hooks/useBuyingPrices'
+import { useBuyingPrices, BuyingPriceTier } from '@/hooks/useBuyingPrices'
 
 interface PriceCalculatorProps {
-  onBuyClick: (amount: number) => void
+  onBuyClick: (amount: number, usdtAmount: number, exchangeRate: number) => void
+}
+
+const parseRange = (rangeStr: string): [number, number] => {
+  if (rangeStr.includes('+')) {
+    return [parseInt(rangeStr.replace('+', ''), 10), Infinity]
+  }
+  const parts = rangeStr.split(/–|-/).map(s => parseInt(s, 10)) // Handles both en-dash and hyphen
+  return [parts[0], parts[1]]
+}
+
+const findRateForInrAmount = (inrAmount: number, tiers: BuyingPriceTier[]): BuyingPriceTier | null => {
+  if (inrAmount <= 0 || tiers.length === 0) return null
+
+  // Create a reversed copy to check from best rate (highest quantity) to worst
+  const reversedTiers = [...tiers].reverse()
+
+  for (const tier of reversedTiers) {
+    const [minUsdt] = parseRange(tier.quantity_range)
+    const minInrForTier = minUsdt * tier.price_inr
+    if (inrAmount >= minInrForTier) {
+      return tier
+    }
+  }
+
+  // Fallback to the lowest tier (highest price) if no other tier matches
+  return tiers[0]
 }
 
 const PriceCalculator: React.FC<PriceCalculatorProps> = ({ onBuyClick }) => {
   const [amount, setAmount] = useState('')
-  const { buyTiers, loading: ratesLoading } = useBuyingPrices()
+  const { tiers, loading: ratesLoading } = useBuyingPrices()
 
   const inrAmount = parseFloat(amount) || 0
 
-  const { usdtAmount, actualRate } = useMemo(() => {
-    if (inrAmount <= 0 || ratesLoading || buyTiers.length === 0) {
+  const calculation = useMemo(() => {
+    if (ratesLoading || inrAmount <= 0 || tiers.length === 0) {
       return { usdtAmount: 0, actualRate: null }
     }
-
-    // Find the best rate to make a provisional calculation. For buying, best rate is lowest rate.
-    const bestRateTier = buyTiers.reduce((prev, curr) => (prev.price_in_inr < curr.price_in_inr ? prev : curr))
-    const provisionalUsdt = inrAmount / bestRateTier.price_in_inr
-
-    // Find the correct tier based on the provisional USDT amount
-    const correctTier = buyTiers.find(tier => 
-      provisionalUsdt >= tier.min_quantity &&
-      (tier.max_quantity === null || provisionalUsdt < tier.max_quantity)
-    ) || bestRateTier;
-
-    const actualRate = correctTier.price_in_inr
+    const applicableTier = findRateForInrAmount(inrAmount, tiers)
+    if (!applicableTier) {
+      return { usdtAmount: 0, actualRate: null }
+    }
+    const actualRate = applicableTier.price_inr
     const usdtAmount = Number((inrAmount / actualRate).toFixed(6))
-
     return { usdtAmount, actualRate }
-  }, [inrAmount, buyTiers, ratesLoading])
+  }, [inrAmount, tiers, ratesLoading])
+
+  const { usdtAmount, actualRate } = calculation
 
   const handleCalculate = () => {
-    if (inrAmount > 0 && actualRate) {
-      onBuyClick(inrAmount)
+    if (inrAmount > 0 && actualRate && usdtAmount > 0) {
+      onBuyClick(inrAmount, usdtAmount, actualRate)
     }
   }
 
@@ -92,9 +112,13 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({ onBuyClick }) => {
                   <Loader className="w-4 h-4 animate-spin" />
                   <span className="text-xs text-gray-400 ml-2">Loading rate...</span>
                 </div>
-              ) : actualRate && (
+              ) : actualRate ? (
                 <p className="text-xs text-gray-400">
                   Rate: ₹{actualRate.toFixed(2)} per USDT
+                </p>
+              ) : (
+                <p className="text-xs text-red-400">
+                  Buy rate is currently unavailable.
                 </p>
               )}
             </div>

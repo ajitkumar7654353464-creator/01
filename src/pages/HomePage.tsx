@@ -17,12 +17,12 @@ const HomePage: React.FC<HomePageProps> = ({ onAuthRequired }) => {
   const navigate = useNavigate()
   const calculatorRef = useRef<HTMLDivElement>(null)
 
-  const handleBuyClick = (amount?: number) => {
+  const handleBuyClick = (amount?: number, usdtAmount?: number, exchangeRate?: number) => {
     if (!user) {
       onAuthRequired()
       return
     }
-    navigate('/buy', { state: { amount } })
+    navigate('/buy', { state: { amount, usdtAmount, exchangeRate } })
   }
 
   const handleSellClick = () => {
@@ -69,7 +69,7 @@ const HomePage: React.FC<HomePageProps> = ({ onAuthRequired }) => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleBuyClick()}
+                onClick={() => scrollToCalculator()}
                 className="px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-xl text-white font-semibold text-lg flex items-center space-x-2 transition-all"
               >
                 <span>Buy USDT</span>
@@ -96,7 +96,7 @@ const HomePage: React.FC<HomePageProps> = ({ onAuthRequired }) => {
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Price Calculator */}
             <div ref={calculatorRef}>
-              <PriceCalculator onBuyClick={(amount) => handleBuyClick(amount)} />
+              <PriceCalculator onBuyClick={handleBuyClick} />
             </div>
 
             {/* Live Crypto Prices */}
@@ -105,7 +105,7 @@ const HomePage: React.FC<HomePageProps> = ({ onAuthRequired }) => {
         </div>
       </section>
 
-      {/* Tiered Buying Prices Table */}
+      {/* Buying Prices Table */}
       <section className="py-16 bg-black">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <BuyingPricesTable />
