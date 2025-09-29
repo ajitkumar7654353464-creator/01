@@ -5,12 +5,12 @@ import { ArrowLeft, Upload, Wallet, Building, CreditCard, Loader } from 'lucide-
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { useExchangeRates } from '@/hooks/useExchangeRates'
+
+const SELL_RATE = 90; // Fixed sell rate
 
 const SellPage: React.FC = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { sellRate, loading: ratesLoading } = useExchangeRates()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
     usdtAmount: '',
@@ -29,12 +29,12 @@ const SellPage: React.FC = () => {
   const usdtAmountNum = parseFloat(formData.usdtAmount) || 0
 
   useEffect(() => {
-    if (usdtAmountNum > 0 && sellRate) {
-      setCalculatedInrAmount(usdtAmountNum * sellRate)
+    if (usdtAmountNum > 0) {
+      setCalculatedInrAmount(usdtAmountNum * SELL_RATE)
     } else {
       setCalculatedInrAmount(0)
     }
-  }, [usdtAmountNum, sellRate])
+  }, [usdtAmountNum])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,13 +44,17 @@ const SellPage: React.FC = () => {
       return
     }
 
-    if (!user || !sellRate) {
+    if (!user) {
       toast.error('Please login to continue')
       return
     }
 
     setLoading(true)
     try {
+      // TODO: In a real app, you would upload files to Supabase Storage and get the URL
+      // For now, we'll use placeholder names.
+      const walletScreenshotUrl = formData.walletScreenshot ? `sell_proof_${user.id}_${Date.now()}` : null;
+
       const { data, error } = await supabase
         .from('transactions')
         .insert({
@@ -58,11 +62,13 @@ const SellPage: React.FC = () => {
           transaction_type: 'sell',
           amount_inr: calculatedInrAmount,
           amount_usdt: usdtAmountNum,
-          exchange_rate: sellRate,
+          exchange_rate: SELL_RATE,
           network_type: formData.networkType,
           upi_id: formData.paymentMethod === 'upi' ? formData.upiId : null,
+          // TODO: Add bank details to schema and insert if needed
+          payment_proof_url: walletScreenshotUrl,
           status: 'pending',
-          timer_expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString()
+          timer_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 min timer
         })
         .select()
         .single()
@@ -83,14 +89,6 @@ const SellPage: React.FC = () => {
     ERC20: '0xa3674b3d96bbd967b2557455a1f85459ad391f1e'
   }
 
-  if (ratesLoading) {
-    return (
-      <div className="min-h-screen bg-gray-950 py-8 flex items-center justify-center">
-        <Loader className="w-8 h-8 text-orange-500 animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -108,11 +106,11 @@ const SellPage: React.FC = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-4">Sell USDT</h1>
             <p className="text-gray-400">
-              {sellRate ? `Convert your USDT to INR at a fixed rate of ₹${sellRate.toFixed(2)}.` : 'Sell rate is currently unavailable.'}
+              Convert your USDT to INR at a fixed rate of ₹{SELL_RATE.toFixed(2)}.
             </p>
           </div>
 
-          {usdtAmountNum > 0 && sellRate && (
+          {usdtAmountNum > 0 && (
             <div className="mb-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
               <h3 className="text-lg font-semibold text-white mb-3">Transaction Summary</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -126,7 +124,7 @@ const SellPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Exchange Rate</p>
-                  <p className="text-lg font-semibold text-white">₹{sellRate.toFixed(2)}</p>
+                  <p className="text-lg font-semibold text-white">₹{SELL_RATE.toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Network</p>
@@ -159,9 +157,7 @@ const SellPage: React.FC = () => {
                         className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500"
                         placeholder="Enter USDT amount"
                         required
-                        disabled={!sellRate}
                       />
-                       {!sellRate && !ratesLoading && <p className="text-xs text-red-400 mt-1">Selling is currently unavailable.</p>}
                     </div>
 
                     <div>
@@ -216,7 +212,7 @@ const SellPage: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  disabled={!formData.usdtAmount || ratesLoading || !sellRate}
+                  disabled={!formData.usdtAmount}
                   className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 rounded-lg text-white font-medium transition-all"
                 >
                   Continue
@@ -247,27 +243,6 @@ const SellPage: React.FC = () => {
                           placeholder="your-upi@bank"
                           required
                         />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          UPI QR Code (Optional)
-                        </label>
-                        <div className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => setFormData(prev => ({ ...prev, upiQr: e.target.files?.[0] || null }))}
-                            className="hidden"
-                            id="upi-qr-upload"
-                          />
-                          <label htmlFor="upi-qr-upload" className="cursor-pointer">
-                            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-gray-400">
-                              {formData.upiQr ? formData.upiQr.name : 'Upload UPI QR Code'}
-                            </p>
-                          </label>
-                        </div>
                       </div>
                     </div>
                   ) : (
@@ -364,7 +339,7 @@ const SellPage: React.FC = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !formData.walletScreenshot}
                     className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 rounded-lg text-white font-medium transition-all"
                   >
                     {loading ? 'Submitting...' : 'Submit Sell Order'}

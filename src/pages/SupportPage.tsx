@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, MessageCircle, Clock, CheckCircle } from 'lucide-react'
+import { Plus, MessageCircle, Clock, CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -22,6 +22,7 @@ const SupportPage: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     subject: '',
     description: '',
@@ -37,6 +38,7 @@ const SupportPage: React.FC = () => {
   }, [user, navigate])
 
   const loadTickets = async () => {
+    setLoading(true)
     try {
       const { data, error } = await supabase
         .from('tickets')
@@ -60,7 +62,7 @@ const SupportPage: React.FC = () => {
       toast.error('Please enter a subject')
       return
     }
-
+    setIsSubmitting(true)
     try {
       const { error } = await supabase
         .from('tickets')
@@ -80,42 +82,35 @@ const SupportPage: React.FC = () => {
       loadTickets()
     } catch (error: any) {
       toast.error(error.message || 'Failed to create ticket')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open':
-        return 'text-blue-400 bg-blue-900/20 border-blue-800'
-      case 'in_progress':
-        return 'text-yellow-400 bg-yellow-900/20 border-yellow-800'
+      case 'open': return 'text-blue-400 bg-blue-900/30';
+      case 'in_progress': return 'text-yellow-400 bg-yellow-900/30';
       case 'resolved':
-      case 'closed':
-        return 'text-green-400 bg-green-900/20 border-green-800'
-      default:
-        return 'text-gray-400 bg-gray-900/20 border-gray-800'
+      case 'closed': return 'text-green-400 bg-green-900/30';
+      default: return 'text-gray-400 bg-gray-900/30';
     }
   }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent':
-        return 'text-red-400'
-      case 'high':
-        return 'text-orange-400'
-      case 'medium':
-        return 'text-yellow-400'
-      case 'low':
-        return 'text-green-400'
-      default:
-        return 'text-gray-400'
+      case 'urgent': return 'text-red-400 bg-red-900/30';
+      case 'high': return 'text-orange-400 bg-orange-900/30';
+      case 'medium': return 'text-yellow-400 bg-yellow-900/30';
+      case 'low': return 'text-green-400 bg-green-900/30';
+      default: return 'text-gray-400 bg-gray-900/30';
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-black py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
           </div>
@@ -125,36 +120,25 @@ const SupportPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors mb-6"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Home</span>
-          </button>
-          
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-white">Support Center</h1>
-              <p className="text-gray-400 mt-2">Get help with your transactions and account</p>
-            </div>
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateForm(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-lg text-white font-medium transition-all"
-            >
-              <Plus className="w-5 h-5" />
-              <span>New Ticket</span>
-            </motion.button>
+    <div className="min-h-screen bg-black py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <div className="flex justify-center items-center gap-3 mb-4">
+            <MessageCircle className="w-8 h-8 text-gray-400" />
+            <h1 className="text-3xl font-bold text-white">Support Center</h1>
           </div>
+          <p className="text-gray-400 mb-6">Get help with your transactions</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowCreateForm(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-lg text-white font-medium transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Create New Ticket</span>
+          </motion.button>
         </div>
 
-        {/* Create Ticket Form */}
         {showCreateForm && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -162,125 +146,77 @@ const SupportPage: React.FC = () => {
             className="bg-gray-900 rounded-2xl p-6 border border-gray-800 mb-8"
           >
             <h2 className="text-xl font-semibold text-white mb-6">Create Support Ticket</h2>
-            
             <form onSubmit={handleCreateTicket} className="space-y-4">
+              {/* Form fields remain the same, just styled within the modal/form area */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Subject *
-                </label>
-                <input
-                  type="text"
-                  value={formData.subject}
-                  onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500"
-                  placeholder="Brief description of your issue"
-                  required
-                />
+                <label className="block text-sm font-medium text-gray-300 mb-2">Subject *</label>
+                <input type="text" value={formData.subject} onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500" required />
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Priority
-                </label>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as any }))}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500"
-                >
+                <label className="block text-sm font-medium text-gray-300 mb-2">Priority</label>
+                <select value={formData.priority} onChange={(e) => setFormData(p => ({ ...p, priority: e.target.value as any }))} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500">
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="urgent">Urgent</option>
                 </select>
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500"
-                  placeholder="Detailed description of your issue"
-                />
+                <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                <textarea value={formData.description} onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))} rows={4} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-orange-500" />
               </div>
-              
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-lg text-white font-medium transition-all"
-                >
-                  Create Ticket
+              <div className="flex space-x-4 pt-4">
+                <button type="button" onClick={() => setShowCreateForm(false)} className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-medium transition-colors">Cancel</button>
+                <motion.button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg text-white font-medium transition-all disabled:opacity-50">
+                  {isSubmitting ? 'Submitting...' : 'Create Ticket'}
                 </motion.button>
               </div>
             </form>
           </motion.div>
         )}
 
-        {/* Tickets List */}
-        {tickets.length === 0 ? (
+        {tickets.length === 0 && !showCreateForm ? (
           <div className="bg-gray-900 rounded-2xl p-12 border border-gray-800 text-center">
-            <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-8 h-8 text-gray-400" />
-            </div>
             <h2 className="text-xl font-semibold text-white mb-2">No Support Tickets</h2>
-            <p className="text-gray-400 mb-6">You haven't created any support tickets yet.</p>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-lg text-white font-medium transition-all"
-            >
-              Create Your First Ticket
-            </button>
+            <p className="text-gray-400">You haven't created any support tickets yet.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {tickets.map((ticket, index) => (
               <motion.div
                 key={ticket.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-gray-700 transition-colors"
+                transition={{ delay: index * 0.05 }}
+                className="bg-gray-800/40 rounded-xl border border-gray-700/80 overflow-hidden"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-2">{ticket.subject}</h3>
-                    {ticket.description && (
-                      <p className="text-gray-400 text-sm mb-3">{ticket.description}</p>
-                    )}
-                    <p className="text-xs text-gray-500">
-                      Created {new Date(ticket.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+                <div className="p-4 flex flex-col sm:flex-row justify-between items-start gap-4">
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-white">{ticket.subject}</h3>
+                      {ticket.description && <p className="text-sm text-gray-400 mt-1">{ticket.description}</p>}
+                      <p className="text-xs text-gray-500 mt-2">
+                        Created: {new Date(ticket.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </p>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <span className={`text-xs font-medium capitalize ${getPriorityColor(ticket.priority)}`}>
-                      {ticket.priority}
-                    </span>
-                    <div className={`px-3 py-1 rounded-full border text-xs font-medium flex items-center space-x-2 ${getStatusColor(ticket.status)}`}>
-                      {ticket.status === 'open' && <Clock className="w-3 h-3" />}
-                      {(ticket.status === 'resolved' || ticket.status === 'closed') && <CheckCircle className="w-3 h-3" />}
+                  <div className="flex sm:flex-col items-end gap-2 flex-shrink-0 self-start sm:self-center">
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
+                      {ticket.status === 'open' ? <Clock className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
                       <span className="capitalize">{ticket.status.replace('_', ' ')}</span>
+                    </div>
+                    <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
+                      <span className="capitalize">{ticket.priority}</span>
                     </div>
                   </div>
                 </div>
+                {(ticket.id || ticket.transaction_id) && (
+                  <div className="border-t border-gray-700/80 p-4 text-xs text-gray-500 flex flex-col sm:flex-row justify-between gap-2">
+                    <p>Ticket ID: <span className="text-gray-400 font-mono">{ticket.id}</span></p>
+                    {ticket.transaction_id && <p>Transaction: <span className="text-gray-400 font-mono">{ticket.transaction_id}</span></p>}
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
